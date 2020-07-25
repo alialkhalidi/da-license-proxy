@@ -1,0 +1,10 @@
+http:
+  listen:
+    address: :8989
+  url: http://localhost:8989
+  ui:
+    path: ui
+simserver:
+  url: https://st-org10-app.stg.verified.me
+myam:
+  url: https://st-peerorg10-myam.stg.verified.me
