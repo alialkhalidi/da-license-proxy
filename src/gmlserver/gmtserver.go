@@ -39,21 +39,6 @@ func NewGmlServer(cfgFile string) (*GmlServer, error) {
 
 }
 
-func (t *GmlServer) StartGo() *http.Server {
-        server, _ := t.startH(true)
-        return server
-}
-
-
-func (t *GmlServer) Start() error {
-
-        if _, err := t.startH(false); err != nil {
-                myLogger.Fatalf("in process startup error: %v", err.Error())
-                return err
-        }
-        return nil
-}
-
 func uiHandler(w http.ResponseWriter, r *http.Request) {
    fmt.Fprintf(w, "UI All good\n")
  }
@@ -62,17 +47,17 @@ func GmlHandler(w http.ResponseWriter, r *http.Request) {
      fmt.Fprintf(w, "REST All good\n")
 }
 
-func (t *GmlServer) startH(async bool) (server *http.Server, err error) {
+func (t *GmlServer) Start() (server *http.Server, err error) {
         server = &http.Server{Addr: t.Port}
 
         http.HandleFunc("/"+t.UIPath, uiHandler)
         http.HandleFunc("/Gml", GmlHandler)
-        if async {
-                go t.startServer(server)
-        } else {
-                err = t.startServer(server)
+        err = t.startServer(server)
+        if err != nil {
+            myLogger.Printf("Error starting server: %s", err)
+            return nil, err
         }
-        return server, err
+        return server, nil
 }
 
 func (t *GmlServer) startServer(server *http.Server) error {

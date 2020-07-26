@@ -33,7 +33,7 @@ func main() {
 	myLogger.Printf("******STARTING GML SERVER********")
 
 	go func() {
-					if err := gml.Start(); err != nil {
+					if _, err := gml.Start(); err != nil {
 									myLogger.Printf("%s\n",err.Error())
 									close(sigs)
 					}
