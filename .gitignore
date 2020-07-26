@@ -1,5 +1,5 @@
 bin/
 pkg/
+src/*
 !/src/gml/gml.go
 !/src/gmlserver/
-src/*
