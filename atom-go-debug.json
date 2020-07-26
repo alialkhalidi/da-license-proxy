@@ -1,0 +1,9 @@
+{
+   "configurations": [
+     {
+       "name": "Debug cmd",
+       "mode": "debug",
+       "args": ["/home/alialkhalidi/work/give-me-license/gmlserverconfig.yml"]
+     }
+  ]
+}
