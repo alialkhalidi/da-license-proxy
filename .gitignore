@@ -3,3 +3,4 @@ pkg/
 src/*
 !/src/gml/
 !/src/gmlserver/
+!/gml/gml.go
