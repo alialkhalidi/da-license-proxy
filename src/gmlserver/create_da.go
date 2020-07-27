@@ -19,7 +19,6 @@ func decodeSimState(b64state string) (*DLBstate, error) {
 	return statestruct, nil
 }
 
-//func CreateDA(accessToken string, state string, assetTypes []string, interactionType string, pseudonymID string) (string, map[string]CreateDigitalAssetRespBody, error) {
 func CreateDA(accessToken string, state string, assetTypes []string) (string, map[string]CreateDigitalAssetRespBody, error) {
 	if accessToken == "" || state == "" {
 		return "", nil, fmt.Errorf("createDA -> cannot create DA, must call createLockbox first")
@@ -51,27 +50,6 @@ func CreateDA(accessToken string, state string, assetTypes []string) (string, ma
 		AssetTypes:  assetTypes,
 		ServerState: state,
 	}
-	/*
-	   if interactionType != "" {
-	           _, dapURL, err := GetTestDAPByInteractionType(interactionType)
-	           if err != nil {
-	                   return "", nil, err
-	           }
-	           payload.Endpoint = Config.Protocol + dapURL
-	           payload.PseudonymID = pseudonymID
-	   }
-
-
-	   if payload.Endpoint != Config.MyBankBaseURL { // sending to DAP
-	           var channelCode *ChannelCode
-	           channelCode, state, err = getNextOrgCode(accessToken, state)
-	           if err != nil {
-	                   return "", nil, fmt.Errorf("failed to get channel code: %s", err)
-	           }
-	           payload.ChannelCode = channelCode
-	           payload.ServerState = state
-	   }
-	*/
 	myLogger.Printf("Sending CreateDA, endpoint: %s, channelCode: %v\n", payload.Endpoint, payload.ChannelCode)
 
 	var postbody = new(CreateDigitalAssetReq)
