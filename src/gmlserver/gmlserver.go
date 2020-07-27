@@ -45,16 +45,24 @@ func uiHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GmlHandler(w http.ResponseWriter, r *http.Request) {
+
 	accessToken, err := GetAccessToken(VerifiedMeScope, "jdoe7", "password", "")
 	if err != nil {
 		myLogger.Fatalf("GetAccessToken: %v", err)
 	}
 	fmt.Fprintf(w, "GetAccessToken: Success\n")
-	_, _, err = RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
+	serverState, _, err := RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
 	if err != nil {
 		myLogger.Fatalf("RecoverLockboxWithClientID: %v", err)
 	}
-	fmt.Fprintf(w, "RecoverLockboxWithClientID: Success")
+	fmt.Fprintf(w, "RecoverLockboxWithClientID: Success\n")
+
+	assets := []string{"vme://assets/foundationalIdentity"}
+	_, _, err = CreateDA(accessToken, serverState, assets)
+	if err != nil {
+		myLogger.Fatalf("CreateDA: %v", err)
+	}
+	fmt.Fprintf(w, "CreateDA: Success\n")
 }
 
 func (t *GmlServer) Start() (server *http.Server, err error) {
