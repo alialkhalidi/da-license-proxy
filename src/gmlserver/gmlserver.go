@@ -80,15 +80,6 @@ func uiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "UI All good\n")
 }
 
-/*
-func writeResponse(w http.ResponseWriter, response interface{}) error {
-
-	fmt.Fprintf(w, "%s", response)
-
-	return nil
-}
-*/
-
 func writeResponse(w http.ResponseWriter, response interface{}) error {
 	var payload []byte
 	var err error
