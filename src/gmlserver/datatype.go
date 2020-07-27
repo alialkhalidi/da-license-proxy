@@ -18,6 +18,7 @@ const (
 	accessTokenRequestMethod    = "accesstoken"
 	RequestMethodRecoverLockbox = "recoverLockbox"
 	EndpointCreateDigitalAsset  = "createdigitalasset"
+	EndpointIssueLicense        = "issuelicense"
 	defaultTimeout              = time.Minute * 10
 )
 
@@ -676,4 +677,65 @@ type RetrieveLicenseRequestrespbody struct {
 	DecryptedRequest *DACLicenseRequest `json:"decryptedRequest"`
 	// The hash of the unencrypted request.
 	RequestHash string `json:"requestHash"`
+}
+
+type IssueLicenseReq struct {
+	//in: body
+	Body struct {
+		// issueLicense request body
+		//required: true
+		IssueLicenseBody *IssueLicenseReqBody `json:"issueLicenseBody" validate:"required"`
+		// map of assets the user chose to issue.
+		//required: true
+		MatchedAssets map[string]AssetQueryEntry `json:"matchedAssets" validate:"required"`
+	}
+}
+
+type IssueLicenseReqBody struct {
+	// AccessToken retrieved from provider for specific scopes related to issueLicense.
+	//required: true
+	AccessToken string `json:"accessToken" validate:"required"`
+	// Endpoint to contact to initiate the issueLicense flow.
+	//required: true
+	Endpoint string `json:"endpoint" validate:"required"`
+	// ID of the license request.
+	//required: true
+	LicenseRequestID string `json:"licenseRequestId" validate:"required"`
+	// Server State is the base64url encoded state representing the device internal state
+	//required: true
+	ServerState string `json:"serverState" validate:"required"`
+	// DoNotNotify boolean flag, if set true, issue license handler will not post license to DAC notification URL. Defualt is false
+	//required: false
+	DoNotNotifyDAC bool `json:"doNotNotifyDac"`
+	// ChannelId If supplied and the DoNotNotifyDAC is false (or not present) then the issued license will be sent
+	// back to the DAC on the supplied channel
+	//required: false
+	ChannelID string `json:"channelId"`
+	// EncryptWholeAsset if true, whole asset will be encrypted at once, otherwise each field will be encrypted separately.
+	//required: false
+	EncryptWholeAsset bool `json:"encryptWholeAsset"`
+}
+
+type IssueLicenseResp struct {
+	//in: body
+	Body struct {
+		// url which points to DAC license notification endpoint and contains DACLicense ID as a url parameter.
+		URL string `json:"url,omitempty"`
+		// issued license
+		License string `json:"license,omitempty"`
+		// base64url encoded server state for representing the device internal state
+		ServerState string `json:"serverState"`
+	}
+}
+
+type AssetQueryEntry struct {
+	// must match query asset-name of the CreateLicenceRequest payload submitted by the DAC.
+	//required: true
+	Name string `json:"name"`
+	// asset sequence number which is number of times this asset has been licensed before. Starting from 1.
+	//required: true
+	AssetSeqNo int `json:"assetSeqNo"`
+	// asset id
+	//required: true
+	DigitalAssetID string `json:"digitalAssetId"`
 }
