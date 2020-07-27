@@ -40,42 +40,51 @@ func NewGmlServer(cfgFile string) (*GmlServer, error) {
 
 }
 
+func getLicenseForDA(username, password, licenseRequestID, requestEncKey string) (string, error) {
+
+	accessToken, err := GetAccessToken(VerifiedMeScope, username, password, "")
+	if err != nil {
+		myLogger.Printf("GetAccessToken: %v", err)
+		return "", err
+	}
+	serverState, _, err := RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
+	if err != nil {
+		myLogger.Printf("RecoverLockboxWithClientID: %v", err)
+		return "", err
+	}
+
+	assets := []string{"vme://assets/foundationalIdentity"}
+	serverState, daMap, err := CreateDA(accessToken, serverState, assets)
+	if err != nil {
+		myLogger.Printf("CreateDA: %v", err)
+		return "", err
+	}
+
+	serverState, _, err = RetrieveLicenseRequest(accessToken, serverState, licenseRequestID, requestEncKey, http.StatusAccepted)
+	if err != nil {
+		myLogger.Printf("RetrieveLicenseRequest: %v", err)
+		return "", err
+	}
+
+	issueLicenseResp, err := IssueLicense(accessToken, serverState, licenseRequestID, daMap)
+	if err != nil {
+		myLogger.Printf("IssueLicense: %v", err)
+		return "", err
+	}
+	return issueLicenseResp.Body.License, nil
+
+}
 func uiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "UI All good\n")
 }
 
 func GmlHandler(w http.ResponseWriter, r *http.Request) {
 
-	accessToken, err := GetAccessToken(VerifiedMeScope, "jdoe7", "password", "")
+	license, err := getLicenseForDA("jdoe7", "password", "m4kKy0dE4AO6pN_HspEeFFcgLKHfllfi51kqPBtUWx4", "4agcLIVPHnIfrKQslh4y5ZsUoC7j7EZOqviATjZmNFs")
 	if err != nil {
-		myLogger.Fatalf("GetAccessToken: %v", err)
+		myLogger.Fatalf("getLicenseForDA: %v", err)
 	}
-	fmt.Fprintf(w, "GetAccessToken: Success\n")
-	serverState, _, err := RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
-	if err != nil {
-		myLogger.Fatalf("RecoverLockboxWithClientID: %v", err)
-	}
-	fmt.Fprintf(w, "RecoverLockboxWithClientID: Success\n")
-
-	assets := []string{"vme://assets/foundationalIdentity"}
-	serverState, daMap, err := CreateDA(accessToken, serverState, assets)
-	if err != nil {
-		myLogger.Fatalf("CreateDA: %v", err)
-	}
-	fmt.Fprintf(w, "CreateDA: Success\n")
-
-	licenseRequestID := "_l3xIhxOWpvJSqVRQCskC5HJVZhD9KoaUr5FK7z545I"
-	requestEncKey := "AV6V5gZMQwc0dksDEoHNAhIX-AckTXpgDZOVYtserV0"
-	serverState, _, err = RetrieveLicenseRequest(accessToken, serverState, licenseRequestID, requestEncKey, http.StatusAccepted)
-	if err != nil {
-		myLogger.Fatalf("RetrieveLicenseRequest: %v", err)
-	}
-	fmt.Fprintf(w, "RetrieveLicenseRequest: Success\n")
-	issueLicenseResp, err := IssueLicense(accessToken, serverState, licenseRequestID, daMap)
-	if err != nil {
-		myLogger.Fatalf("IssueLicense: %v", err)
-	}
-	fmt.Fprintf(w, "IssueLicense: Success\n %s", issueLicenseResp.Body.License)
+	fmt.Fprintf(w, "{\"license\": \"%s\"}\n", license)
 }
 
 func (t *GmlServer) Start() (server *http.Server, err error) {
