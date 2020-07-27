@@ -628,3 +628,52 @@ type UserInteractionInfo struct {
 	License        string `json:"license,omitempty"`
 	AppHostState   string `json:"appHostState,omitempty"`
 }
+
+type RetrieveLicenseRequestReq struct {
+	//in: body
+	Body struct {
+		// retrieveLicenseRequestDevicePayload request body
+		RetrieveLicenseRequestBody *RetrieveLicenseRequestReqBody `json:"retrieveLicenseRequestBody"`
+	}
+}
+
+// RetrieveLicenseRequestReqBody .
+type RetrieveLicenseRequestReqBody struct {
+	// AccessToken retrieved from provider for specific scopes related to retrieveLicenseRequestDevicePayload.
+	//required: true
+	AccessToken string `json:"accessToken" validate:"required"`
+	// Endpoint to contact to initiate the retrieveLicenseRequestDevicePayload flow.
+	//required: true
+	Endpoint string `json:"endpoint" validate:"required"`
+	// ID of the license request.
+	//required: false
+	LicenseRequestID string `json:"licenseRequestId"`
+	// Symmetric key that will be used to decrypt the returned encrypted CreateLicenseRequest request.
+	//required: true
+	RequestEncKey string `json:"requestEncKey" validate:"required"`
+	/// Server State is the base64url encoded state representing the internal server state of the device
+	//required: true
+	ServerState string `json:"serverState" validate:"required"`
+}
+
+type RetrieveLicenseRequestResp struct {
+	//in: body
+	Body struct {
+		// retrieveLicenseRequestDevicePayload full response from endpoint.
+		CLR *RetrieveLicenseRequestrespbody `json:"RetrieveLicenseRequestRespBody"`
+		// ID of CreateDigitalAssetBody license request.
+		LicenseRequestID string `json:"licenseRequestId"`
+		// base64url encoded server state for representing the internal state of the device
+		ServerState string `json:"serverState"`
+	}
+}
+
+// RetrieveLicenseRequestrespbody .
+type RetrieveLicenseRequestrespbody struct {
+	// The encrypted license request.
+	EncRequest string `json:"encRequest"`
+	// The decrypted license request that was requested by DAC(digital asset consumer).
+	DecryptedRequest *DACLicenseRequest `json:"decryptedRequest"`
+	// The hash of the unencrypted request.
+	RequestHash string `json:"requestHash"`
+}
