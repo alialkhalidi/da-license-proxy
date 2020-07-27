@@ -49,12 +49,12 @@ func GmlHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		myLogger.Fatalf("GetAccessToken: %v", err)
 	}
-	fmt.Fprintf(w, "access token: %s\n", accessToken)
-	serverState, recoverLockboxBody, err := RecoverLockboxWithClientID(accessToken, 202, "")
+	fmt.Fprintf(w, "GetAccessToken: Success\n")
+	_, _, err = RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
 	if err != nil {
 		myLogger.Fatalf("RecoverLockboxWithClientID: %v", err)
 	}
-	fmt.Fprintf(w, "serverState: %s\n\nrecoverLockBoxBody: %v", serverState, recoverLockboxBody)
+	fmt.Fprintf(w, "RecoverLockboxWithClientID: Success")
 }
 
 func (t *GmlServer) Start() (server *http.Server, err error) {
