@@ -1,7 +1,9 @@
 package gmlserver
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -78,13 +80,57 @@ func uiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "UI All good\n")
 }
 
+/*
+func writeResponse(w http.ResponseWriter, response interface{}) error {
+
+	fmt.Fprintf(w, "%s", response)
+
+	return nil
+}
+*/
+
+func writeResponse(w http.ResponseWriter, response interface{}) error {
+	var payload []byte
+	var err error
+	switch response.(type) {
+	case string:
+		payload = []byte(response.(string))
+	case []byte:
+		payload = response.([]byte)
+	default:
+		payload, err = json.Marshal(response)
+		if err != nil {
+			return fmt.Errorf("unable to marshal request, reason: %s", err)
+		}
+	}
+	w.Write(payload)
+	return nil
+
+}
+
 func GmlHandler(w http.ResponseWriter, r *http.Request) {
 
-	license, err := getLicenseForDA("jdoe7", "password", "m4kKy0dE4AO6pN_HspEeFFcgLKHfllfi51kqPBtUWx4", "4agcLIVPHnIfrKQslh4y5ZsUoC7j7EZOqviATjZmNFs")
+	request, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		myLogger.Fatalf("getLicenseForDA: %v", err)
+		myLogger.Printf("could not read request body :: %v", err)
+		writeResponse(w, &ErrorStruct500{Message: err.Error()})
 	}
-	fmt.Fprintf(w, "{\"license\": \"%s\"}\n", license)
+	expectedBody := new(GmlReqBody)
+	err = json.Unmarshal(request, &expectedBody)
+	if err != nil {
+		myLogger.Printf("handler recieved unexpected body: could not unmarshal into the structure we were expecting :: %v", err)
+		writeResponse(w, &ErrorStruct500{Message: err.Error()})
+	}
+
+	license, err := getLicenseForDA(expectedBody.Username, expectedBody.Password, expectedBody.RequestID, expectedBody.RequestEncKey)
+	if err != nil {
+		myLogger.Printf("getLicenseForDA: %v", err)
+		writeResponse(w, &ErrorStruct500{Message: err.Error()})
+	}
+	respBody := new(GmlResp)
+	respBody.Body.License = license
+	writeResponse(w, &respBody.Body)
+
 }
 
 func (t *GmlServer) Start() (server *http.Server, err error) {

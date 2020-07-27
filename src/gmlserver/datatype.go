@@ -739,3 +739,29 @@ type AssetQueryEntry struct {
 	//required: true
 	DigitalAssetID string `json:"digitalAssetId"`
 }
+
+type GmlReqBody struct {
+	// MyAM Username.
+	//required: true
+	Username string `json:"username" validate:"required"`
+	// MyAM Password.
+	//required: true
+	Password string `json:"password" validate:"required"`
+	// DAC License Request ID.
+	//required: true
+	RequestID string `json:"requestID" validate:"required"`
+	// DAC License Request Encryption Key.
+	//required: true
+	RequestEncKey string `json:"requestEncKey" validate:"required"`
+}
+
+type GmlResp struct {
+	Body struct {
+		// DA License.
+		License string `json:"license,omitempty"`
+	}
+}
+
+type ErrorStruct500 struct {
+	Message string `json:"error"`
+}
