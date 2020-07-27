@@ -47,9 +47,14 @@ func uiHandler(w http.ResponseWriter, r *http.Request) {
 func GmlHandler(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := GetAccessToken(VerifiedMeScope, "jdoe7", "password", "")
 	if err != nil {
-		myLogger.Fatalf("%v", err)
+		myLogger.Fatalf("GetAccessToken: %v", err)
 	}
 	fmt.Fprintf(w, "access token: %s\n", accessToken)
+	serverState, recoverLockboxBody, err := RecoverLockboxWithClientID(accessToken, 202, "")
+	if err != nil {
+		myLogger.Fatalf("RecoverLockboxWithClientID: %v", err)
+	}
+	fmt.Fprintf(w, "serverState: %s\n\nrecoverLockBoxBody: %v", serverState, recoverLockboxBody)
 }
 
 func (t *GmlServer) Start() (server *http.Server, err error) {
@@ -110,6 +115,7 @@ func (t *GmlServer) initConfig(cfgFile string) error {
 
 	Config.CorrectProviderURL = t.MyamURL + "/myam/oidc"
 	Config.CorrectAudience = t.MyamURL + "/myam/oidc/token"
+	Config.MyBankBaseURL = t.SimServerURL + "/my-bank"
 	Config.UILocales = "en"
 	Config.SimServerURL = t.SimServerURL
 
