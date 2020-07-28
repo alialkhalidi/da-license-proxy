@@ -79,7 +79,8 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 func (t *GmlServer) processGetMethod() {
 	const page = `<html>
   <form id="gml" action="/ui" method="post">
-  <textarea name="JSON" id="JSON" spellcheck="false" rows="20" form="gml"></textarea>
+  <textarea name="JSON" id="JSON" placeholder='{"username": "", "password": "", "requestId": "", "requestEncKey": ""}' spellcheck="false" rows="20" form="gml">
+	</textarea>
   <input type="submit" value="Send Request<"/>
   </form>
   <html>
