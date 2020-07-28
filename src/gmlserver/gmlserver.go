@@ -1,14 +1,18 @@
 package gmlserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
-	"sk-git.securekey.com/gerrit/vme-core/utils/config"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/spf13/viper"
 )
@@ -79,8 +83,7 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 func (t *GmlServer) processGetMethod() {
 	const page = `<html>
   <form id="gml" action="/ui" method="post">
-  <textarea name="JSON" id="JSON" placeholder='{"username": "", "password": "", "requestId": "", "requestEncKey": ""}' spellcheck="false" rows="20" form="gml">
-	</textarea>
+  <textarea name="JSON" id="JSON" placeholder='{"username": "", "password": "", "requestId": "", "requestEncKey": ""}' spellcheck="false" rows="20" form="gml"></textarea>
   <input type="submit" value="Send Request<"/>
   </form>
   <html>
@@ -220,8 +223,54 @@ func (t *GmlServer) Close() error {
 	return nil
 }
 
+func (t *GmlServer) setupViper(cfgFile string) error {
+	v := viper.GetViper()
+	var err error
+	var data []byte
+	confType := "yaml"
+
+	data, err = ioutil.ReadFile(filepath.Clean(cfgFile))
+	if err != nil {
+		return fmt.Errorf("failed to read configuration file %s. %v", cfgFile, err)
+	}
+
+	ext := filepath.Ext(cfgFile)
+	if len(ext) > 1 {
+		confType = ext[1:len(ext)]
+	}
+
+	cfgStr := string(data)
+	envExpandedCfg := os.ExpandEnv(cfgStr)
+	v.SetConfigType(confType)
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+
+	err = v.ReadConfig(bytes.NewReader([]byte(envExpandedCfg)))
+	if err != nil {
+		return fmt.Errorf("failed to load configuration data. %v", err)
+	}
+
+	yamlMap := make(map[string]interface{})
+	err = v.Unmarshal(&yamlMap)
+	if err != nil {
+		return fmt.Errorf("viper.Unmarshal failed %v", err)
+	}
+
+	rawCfg, err := yaml.Marshal(&yamlMap)
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration content into YAML %v", err)
+	}
+
+	err = v.ReadConfig(bytes.NewReader(rawCfg))
+	if err != nil {
+		return fmt.Errorf("readconfig failed: %v", err)
+	}
+	return nil
+
+}
+
 func (t *GmlServer) initConfig(cfgFile string) error {
-	err := config.SetupViper(cfgFile)
+	err := t.setupViper(cfgFile)
 	if err != nil {
 		return fmt.Errorf("failed to set up viper using config file and environmental variables %v", err)
 	}
