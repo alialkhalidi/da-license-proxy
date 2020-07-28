@@ -16,8 +16,6 @@ import (
 var myLogger = log.New(log.Writer(), "gmlserver ", 0)
 
 const (
-	clientAuthBasic = "basic"
-
 	SERVER_ADDRESS = "http.url"
 	SERVER_PORT    = "http.listen.address"
 	SERVER_UI_PATH = "http.ui.path"
@@ -32,6 +30,7 @@ type GmlServer struct {
 	SimServerURL  string
 	MyamURL       string
 	listener      net.Listener
+	writer        http.ResponseWriter
 }
 
 func NewGmlServer(cfgFile string) (*GmlServer, error) {
@@ -76,11 +75,56 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 	return issueLicenseResp.Body.License, nil
 
 }
-func uiHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "UI All good\n")
+
+func (t *GmlServer) processGetMethod() {
+	const page = `<html>
+  <form id="gml" action="/ui" method="post">
+  <textarea name="JSON" id="JSON" spellcheck="false" rows="20" form="gml"></textarea>
+  <input type="submit" value="Send Request<"/>
+  </form>
+  <html>
+  `
+	fmt.Fprintf(t.writer, "%s", page)
 }
 
-func writeResponse(w http.ResponseWriter, response interface{}) error {
+func (t *GmlServer) processPostMethod(r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		myLogger.Printf("processPostMethod: error parsing form")
+		t.writeResponse(&ErrorStruct500{Message: "error parsing form" + err.Error()})
+	}
+
+	expectedBody := new(GmlReqBody)
+	err = json.Unmarshal([]byte(r.Form.Get("JSON")), &expectedBody)
+
+	if err != nil {
+		myLogger.Printf("processPostMethod: could not unmarshal into the structure we were expecting :: %v", err)
+		t.writeResponse(&ErrorStruct500{Message: err.Error()})
+	}
+
+	license, err := getLicenseForDA(expectedBody.Username, expectedBody.Password, expectedBody.RequestID, expectedBody.RequestEncKey)
+
+	if err != nil {
+		myLogger.Printf("getLicenseForDA: %v", err)
+		t.writeResponse(&ErrorStruct500{Message: err.Error()})
+	}
+	respBody := new(GmlResp)
+	respBody.Body.License = license
+	t.writeResponse(&respBody.Body)
+}
+func (t *GmlServer) uiHandler(w http.ResponseWriter, r *http.Request) {
+
+	t.writer = w
+
+	switch {
+	case r.Method == "GET":
+		t.processGetMethod()
+	case r.Method == "POST":
+		t.processPostMethod(r)
+	}
+}
+
+func (t *GmlServer) writeResponse(response interface{}) error {
 	var payload []byte
 	var err error
 	switch response.(type) {
@@ -94,41 +138,42 @@ func writeResponse(w http.ResponseWriter, response interface{}) error {
 			return fmt.Errorf("unable to marshal request, reason: %s", err)
 		}
 	}
-	w.Write(payload)
+	t.writer.Write(payload)
 	return nil
 
 }
 
-func GmlHandler(w http.ResponseWriter, r *http.Request) {
+func (t *GmlServer) gmlHandler(w http.ResponseWriter, r *http.Request) {
 
+	t.writer = w
 	request, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		myLogger.Printf("could not read request body :: %v", err)
-		writeResponse(w, &ErrorStruct500{Message: err.Error()})
+		t.writeResponse(&ErrorStruct500{Message: err.Error()})
 	}
 	expectedBody := new(GmlReqBody)
 	err = json.Unmarshal(request, &expectedBody)
 	if err != nil {
 		myLogger.Printf("handler recieved unexpected body: could not unmarshal into the structure we were expecting :: %v", err)
-		writeResponse(w, &ErrorStruct500{Message: err.Error()})
+		t.writeResponse(&ErrorStruct500{Message: err.Error()})
 	}
 
 	license, err := getLicenseForDA(expectedBody.Username, expectedBody.Password, expectedBody.RequestID, expectedBody.RequestEncKey)
 	if err != nil {
 		myLogger.Printf("getLicenseForDA: %v", err)
-		writeResponse(w, &ErrorStruct500{Message: err.Error()})
+		t.writeResponse(&ErrorStruct500{Message: err.Error()})
 	}
 	respBody := new(GmlResp)
 	respBody.Body.License = license
-	writeResponse(w, &respBody.Body)
+	t.writeResponse(&respBody.Body)
 
 }
 
 func (t *GmlServer) Start() (server *http.Server, err error) {
 	server = &http.Server{Addr: t.Port}
 
-	http.HandleFunc("/"+t.UIPath, uiHandler)
-	http.HandleFunc("/gml", GmlHandler)
+	http.HandleFunc("/"+t.UIPath, t.uiHandler)
+	http.HandleFunc("/gml", t.gmlHandler)
 	err = t.startServer(server)
 	if err != nil {
 		myLogger.Printf("Error starting server: %s", err)
