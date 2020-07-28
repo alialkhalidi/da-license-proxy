@@ -45,31 +45,31 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 
 	accessToken, err := GetAccessToken(VerifiedMeScope, username, password, "")
 	if err != nil {
-		myLogger.Printf("GetAccessToken: %v", err)
+		myLogger.Printf("getLicenseForDA->GetAccessToken: %v", err)
 		return "", err
 	}
 	serverState, _, err := RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
 	if err != nil {
-		myLogger.Printf("RecoverLockboxWithClientID: %v", err)
+		myLogger.Printf("getLicenseForDA->RecoverLockboxWithClientID: %v", err)
 		return "", err
 	}
 
 	assets := []string{"vme://assets/foundationalIdentity"}
 	serverState, daMap, err := CreateDA(accessToken, serverState, assets)
 	if err != nil {
-		myLogger.Printf("CreateDA: %v", err)
+		myLogger.Printf("getLicenseForDA->CreateDA: %v", err)
 		return "", err
 	}
 
 	serverState, _, err = RetrieveLicenseRequest(accessToken, serverState, licenseRequestID, requestEncKey, http.StatusAccepted)
 	if err != nil {
-		myLogger.Printf("RetrieveLicenseRequest: %v", err)
+		myLogger.Printf("getLicenseForDA->RetrieveLicenseRequest: %v", err)
 		return "", err
 	}
 
 	issueLicenseResp, err := IssueLicense(accessToken, serverState, licenseRequestID, daMap)
 	if err != nil {
-		myLogger.Printf("IssueLicense: %v", err)
+		myLogger.Printf("getLicenseForDA->IssueLicense: %v", err)
 		return "", err
 	}
 	return issueLicenseResp.Body.License, nil
@@ -93,21 +93,23 @@ func (t *GmlServer) processPostMethod(r *http.Request) {
 	if err != nil {
 		myLogger.Printf("processPostMethod: error parsing form")
 		t.writeResponse(&ErrorStruct500{Message: "error parsing form" + err.Error()}, http.StatusInternalServerError)
+		return
 	}
 
 	expectedBody := new(GmlReqBody)
 	err = json.Unmarshal([]byte(r.Form.Get("JSON")), &expectedBody)
-
 	if err != nil {
 		myLogger.Printf("processPostMethod: could not unmarshal into the structure we were expecting :: %v", err)
 		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		return
 	}
 
 	license, err := getLicenseForDA(expectedBody.Username, expectedBody.Password, expectedBody.RequestID, expectedBody.RequestEncKey)
 
 	if err != nil {
-		myLogger.Printf("getLicenseForDA: %v", err)
+		myLogger.Printf("processPostMethod->getLicenseForDA : %v", err)
 		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		return
 	}
 	respBody := new(GmlResp)
 	respBody.Body.License = license
@@ -152,18 +154,21 @@ func (t *GmlServer) gmlHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		myLogger.Printf("could not read request body :: %v", err)
 		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		return
 	}
 	expectedBody := new(GmlReqBody)
 	err = json.Unmarshal(request, &expectedBody)
 	if err != nil {
 		myLogger.Printf("handler recieved unexpected body: could not unmarshal into the structure we were expecting :: %v", err)
 		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		return
 	}
 
 	license, err := getLicenseForDA(expectedBody.Username, expectedBody.Password, expectedBody.RequestID, expectedBody.RequestEncKey)
 	if err != nil {
 		myLogger.Printf("getLicenseForDA: %v", err)
 		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		return
 	}
 	respBody := new(GmlResp)
 	respBody.Body.License = license
