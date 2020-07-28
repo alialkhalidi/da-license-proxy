@@ -1,7 +1,6 @@
 package gmlserver
 
 import (
-	_ "encoding/json"
 	"net/http"
 	"net/url"
 	"time"
