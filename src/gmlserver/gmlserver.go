@@ -34,7 +34,6 @@ type GmlServer struct {
 	SimServerURL  string
 	MyamURL       string
 	listener      net.Listener
-	writer        http.ResponseWriter
 }
 
 func NewGmlServer(cfgFile string) (*GmlServer, error) {
@@ -80,7 +79,7 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 
 }
 
-func (t *GmlServer) processGetMethod() {
+func (t *GmlServer) processGetMethod(w http.ResponseWriter) {
 	const page = `<html>
   <form id="gml" action="/ui" method="post">
   <textarea name="JSON" id="JSON" placeholder='{"username": "", "password": "", "requestId": "", "requestEncKey": ""}' spellcheck="false" rows="20" form="gml"></textarea>
@@ -88,14 +87,14 @@ func (t *GmlServer) processGetMethod() {
   </form>
   <html>
   `
-	fmt.Fprintf(t.writer, "%s", page)
+	fmt.Fprintf(w, "%s", page)
 }
 
-func (t *GmlServer) processPostMethod(r *http.Request) {
+func (t *GmlServer) processPostMethod(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		myLogger.Printf("processPostMethod: error parsing form")
-		t.writeResponse(&ErrorStruct500{Message: "error parsing form" + err.Error()}, http.StatusInternalServerError)
+		t.writeResponse(w, &ErrorStruct500{Message: "error parsing form" + err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
@@ -103,7 +102,7 @@ func (t *GmlServer) processPostMethod(r *http.Request) {
 	err = json.Unmarshal([]byte(r.Form.Get("JSON")), &expectedBody)
 	if err != nil {
 		myLogger.Printf("processPostMethod: could not unmarshal into the structure we were expecting :: %v", err)
-		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		t.writeResponse(w, &ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
@@ -111,26 +110,23 @@ func (t *GmlServer) processPostMethod(r *http.Request) {
 
 	if err != nil {
 		myLogger.Printf("processPostMethod->getLicenseForDA : %v", err)
-		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		t.writeResponse(w, &ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 	respBody := new(GmlResp)
 	respBody.Body.License = license
-	t.writeResponse(&respBody.Body, http.StatusOK)
+	t.writeResponse(w, &respBody.Body, http.StatusOK)
 }
 func (t *GmlServer) uiHandler(w http.ResponseWriter, r *http.Request) {
-
-	t.writer = w
-
 	switch {
 	case r.Method == "GET":
-		t.processGetMethod()
+		t.processGetMethod(w)
 	case r.Method == "POST":
-		t.processPostMethod(r)
+		t.processPostMethod(w, r)
 	}
 }
 
-func (t *GmlServer) writeResponse(response interface{}, code int) error {
+func (t *GmlServer) writeResponse(w http.ResponseWriter, response interface{}, code int) error {
 	var payload []byte
 	var err error
 	switch response.(type) {
@@ -144,38 +140,37 @@ func (t *GmlServer) writeResponse(response interface{}, code int) error {
 			return fmt.Errorf("unable to marshal request, reason: %s", err)
 		}
 	}
-	t.writer.WriteHeader(code)
-	t.writer.Write(payload)
+	w.WriteHeader(code)
+	w.Write(payload)
 	return nil
 
 }
 
 func (t *GmlServer) gmlHandler(w http.ResponseWriter, r *http.Request) {
 
-	t.writer = w
 	request, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		myLogger.Printf("could not read request body :: %v", err)
-		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		t.writeResponse(w, &ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 	expectedBody := new(GmlReqBody)
 	err = json.Unmarshal(request, &expectedBody)
 	if err != nil {
 		myLogger.Printf("handler recieved unexpected body: could not unmarshal into the structure we were expecting :: %v", err)
-		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		t.writeResponse(w, &ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
 	license, err := getLicenseForDA(expectedBody.Username, expectedBody.Password, expectedBody.RequestID, expectedBody.RequestEncKey)
 	if err != nil {
 		myLogger.Printf("getLicenseForDA: %v", err)
-		t.writeResponse(&ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
+		t.writeResponse(w, &ErrorStruct500{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 	respBody := new(GmlResp)
 	respBody.Body.License = license
-	t.writeResponse(&respBody.Body, http.StatusOK)
+	t.writeResponse(w, &respBody.Body, http.StatusOK)
 
 }
 
