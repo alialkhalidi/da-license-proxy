@@ -53,26 +53,26 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 	}
 	serverState, _, err := RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
 	if err != nil {
-		myLogger.Printf("getLicenseForDA->RecoverLockboxWithClientID: %v", err)
+		myLogger.Printf("getLicenseForDA->RecoverLockboxWithClientID for user %s: %v", username, err)
 		return "", err
 	}
 
 	assets := []string{"vme://assets/foundationalIdentity"}
 	serverState, daMap, err := CreateDA(accessToken, serverState, assets)
 	if err != nil {
-		myLogger.Printf("getLicenseForDA->CreateDA: %v", err)
+		myLogger.Printf("getLicenseForDA->CreateDA for user %s: %v", username, err)
 		return "", err
 	}
 
 	serverState, _, err = RetrieveLicenseRequest(accessToken, serverState, licenseRequestID, requestEncKey, http.StatusAccepted)
 	if err != nil {
-		myLogger.Printf("getLicenseForDA->RetrieveLicenseRequest: %v", err)
+		myLogger.Printf("getLicenseForDA->RetrieveLicenseRequest for user %s: %v", username, err)
 		return "", err
 	}
 
 	issueLicenseResp, err := IssueLicense(accessToken, serverState, licenseRequestID, daMap)
 	if err != nil {
-		myLogger.Printf("getLicenseForDA->IssueLicense: %v", err)
+		myLogger.Printf("getLicenseForDA->IssueLicense for user %s: %v", username, err)
 		return "", err
 	}
 	return issueLicenseResp.Body.License, nil
