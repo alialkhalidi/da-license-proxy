@@ -53,8 +53,13 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 	}
 	serverState, _, err := RecoverLockboxWithClientID(accessToken, http.StatusAccepted, "")
 	if err != nil {
-		myLogger.Printf("getLicenseForDA->RecoverLockboxWithClientID for user %s: %v", username, err)
-		return "", err
+		myLogger.Printf("getLicenseForDA->RecoverLockboxWithClientID for user %s: %v . . . attempting to create Lockbox", username, err)
+		// lockbox does not exist, attempt to create it
+		serverState, err = CreateLockboxWithOptionalRecoveryData(accessToken, false)
+		if err != nil {
+			myLogger.Printf("getLicenseForDA->CreateLockboxWithOptionalRecoveryData for user %s: %v", username, err)
+			return "", err
+		}
 	}
 
 	assets := []string{"vme://assets/foundationalIdentity"}

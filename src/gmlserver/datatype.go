@@ -7,18 +7,20 @@ import (
 )
 
 const (
-	correctState                = "state"
-	createLockboxScope          = "openid lockbox_creation"
-	VerifiedMeScope             = "openid lockbox_creation verified_me"
-	authlevelAT                 = "https://verified.me/loa/can/auth/elevated" //testGetAccessToken
-	authlevelCLB                = "https://verified.me/loa/can/auth/elevated" //testCreateLockbox
-	authlevelGRF                = "https://verified.me/loa/can/auth/standard" //GetReferenceData
-	requestObjectRequestMethod  = "requestobject"
-	accessTokenRequestMethod    = "accesstoken"
-	RequestMethodRecoverLockbox = "recoverLockbox"
-	EndpointCreateDigitalAsset  = "createdigitalasset"
-	EndpointIssueLicense        = "issuelicense"
-	defaultTimeout              = time.Minute * 10
+	correctState                      = "state"
+	createLockboxScope                = "openid lockbox_creation"
+	VerifiedMeScope                   = "openid lockbox_creation verified_me"
+	authlevelAT                       = "https://verified.me/loa/can/auth/elevated" //testGetAccessToken
+	authlevelCLB                      = "https://verified.me/loa/can/auth/elevated" //testCreateLockbox
+	authlevelGRF                      = "https://verified.me/loa/can/auth/standard" //GetReferenceData
+	requestObjectRequestMethod        = "requestobject"
+	accessTokenRequestMethod          = "accesstoken"
+	RequestMethodRecoverLockbox       = "recoverLockbox"
+	EndpointCreateDigitalAsset        = "createdigitalasset"
+	EndpointCreateLockbox             = "createlockbox"
+	EndpointIssueLicense              = "issuelicense"
+	defaultTimeout                    = time.Minute * 10
+	RequestMethodRetrieveCurrentTerms = "retrieveCurrentTerms"
 )
 
 var Config Configuration
@@ -763,4 +765,49 @@ type GmlResp struct {
 
 type ErrorStruct500 struct {
 	Message string `json:"error"`
+}
+
+// RetrieveCurrentTermsReq .
+// swagger:parameters retrievecurrentterms
+type RetrieveCurrentTermsReq struct {
+	//in: body
+	Body struct {
+		// retrieveCurrentTerms request body.
+		RetrieveCurrentTermsBody *RetrieveCurrentTermsReqBody `json:"retrieveCurrentTermsBody" validate:"required"`
+	}
+}
+
+// RetrieveCurrentTermsReqBody .
+type RetrieveCurrentTermsReqBody struct {
+	// AccessToken retrieve from provider for specific scopes related to RetrieveCurrentTermsReq.
+	//required: true
+	AccessToken string `json:"accessToken" validate:"required"`
+	// Endpoint to contact to initiate the retrieveCurrentTerms flow.
+	//required: true
+	Endpoint string `json:"endpoint" validate:"required"`
+	// Locale to retrieve the terms and conditions for.
+	//required: true
+	Locale string `json:"locale" validate:"required"`
+	// Server State is the base64url encoded state representingthe internal state of the device
+	//required: false
+	ServerState string `json:"serverState"`
+	// ClientID
+	ClientID string `json:"clientId"`
+}
+
+// RetrieveCurrentTermsResp A valid response to a retrievecurrentterms POST request coming from the endpoint.
+// swagger:response
+type RetrieveCurrentTermsResp struct {
+	//in: body
+	Body struct {
+		// RetrieveCurrentTermsRespBody full response from the endpoint
+		RetrieveCurrentTermsRespBody *RetrieveCurrentTermsRespBody `json:"retrieveCurrentTermsBody"`
+		// base64url encoded server state for representing the state of the current device
+		ServerState string `json:"serverState"`
+	}
+}
+
+// RetrieveCurrentTermsRespBody .
+type RetrieveCurrentTermsRespBody struct {
+	TermsInfo *TermsInfo `json:"termsInfo"`
 }
