@@ -28,22 +28,24 @@ func CreateDA(accessToken string, state string, assetTypes []string) (string, ma
 	if err != nil {
 		return "", nil, err
 	}
-	containsExactAssets := func(s *DLBstate, assetTypes []string) bool {
-		if s.DAList == nil || len(s.DAList) == 0 || len(s.DAList) != len(assetTypes) {
-			return false
-		}
-		contains := true
-		for _, assetType := range assetTypes {
-			if _, ok := s.DAList[assetType]; !ok {
-				contains = false
+	/*
+		containsExactAssets := func(s *DLBstate, assetTypes []string) bool {
+			//		if s.DAList == nil || len(s.DAList) == 0 || len(s.DAList) != len(assetTypes) {
+			if s.DAList == nil || len(s.DAList) == 0 || len(s.DAList) >= len(assetTypes) {
+				return false
 			}
+			contains := true
+			for _, assetType := range assetTypes {
+				if _, ok := s.DAList[assetType]; !ok {
+					contains = false
+				}
+			}
+			return contains
 		}
-		return contains
-	}
-	if containsExactAssets(stateObj, assetTypes) {
-		return state, stateObj.DAList, nil
-	}
-
+		if containsExactAssets(stateObj, assetTypes) {
+			return state, stateObj.DAList, nil
+		}
+	*/
 	payload := &CreateDigitalAssetReqBody{
 		AccessToken: accessToken,
 		Endpoint:    Config.MyBankBaseURL,
