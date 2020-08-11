@@ -3,5 +3,3 @@
 - go install gml
 - bin/gml gmlserverconfig.yml
 
-### TODO:
-- Handle Lockbox creation: currently, the code only handles Lockbox recovery. The usecase of performance testing assumes "warmed" users, but this can be changed to improve support.
