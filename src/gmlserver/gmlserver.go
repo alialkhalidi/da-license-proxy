@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var myLogger = log.New(log.Writer(), "gmlserver ", 0)
+var myLogger = log.New(log.Writer(), "gmlserver ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Llongfile)
 
 const (
 	SERVER_ADDRESS = "http.url"
