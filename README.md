@@ -3,3 +3,6 @@
 - go install gml
 - bin/gml gmlserverconfig.yml
 
+### TODO:
+- implement proper retry logic: refactor SendRequestAndCheckResponse and add retry logic based on response code. TL;DR RecoverLockBox sometimes gets 504 Gateway Timeout in UAT.
+
