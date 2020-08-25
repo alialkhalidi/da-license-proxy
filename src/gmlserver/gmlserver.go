@@ -63,13 +63,7 @@ func getLicenseForDA(username, password, licenseRequestID, requestEncKey string)
 	}
 
 	assets := []string{"vme://assets/foundationalIdentity"}
-	//tempServerState := serverState
 	serverState, daMap, err := CreateDA(accessToken, serverState, assets)
-	/*
-		if strings.Compare(tempServerState, serverState) == 0 {
-			myLogger.Printf("getLicenseForDA->CreateDA for user %s: no server state chaneg containsExactAssets", username)
-		}
-	*/
 	if err != nil {
 		myLogger.Printf("getLicenseForDA->CreateDA for user %s: %v", username, err)
 		return "", err
